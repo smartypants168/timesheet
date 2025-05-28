@@ -107,13 +107,17 @@
                 text-align: left;
                 font-weight: 600;
             }
-            /* Data labels for mobile view - Adjusted indices */
-            td:nth-of-type(1):before { content: "Date:"; }
-            td:nth-of-type(2):before { content: "Project Name:"; }
-            td:nth-of-type(3):before { content: "Task:"; }
-            td:nth-of-type(4):before { content: "Start Time:"; }
-            td:nth-of-type(5):before { content: "End Time:"; }
-            td:nth-of-type(6):before { content: "Total Hours:"; }
+            /* Data labels for mobile view - Timesheet Table */
+            #timesheetTable td:nth-of-type(1):before { content: "Date:"; }
+            #timesheetTable td:nth-of-type(2):before { content: "Project Name:"; }
+            #timesheetTable td:nth-of-type(3):before { content: "Task:"; }
+            #timesheetTable td:nth-of-type(4):before { content: "Start Time:"; }
+            #timesheetTable td:nth-of-type(5):before { content: "End Time:"; }
+            #timesheetTable td:nth-of-type(6):before { content: "Total Hours:"; }
+
+            /* Data labels for mobile view - Dashboard Table */
+            #dashboardTable td:nth-of-type(1):before { content: "Project Name:"; }
+            #dashboardTable td:nth-of-type(2):before { content: "Total Calculated Hours:"; }
         }
     </style>
 </head>
@@ -121,8 +125,23 @@
     <div class="container bg-white shadow-lg rounded-xl p-8 mb-8">
         <h1 class="text-4xl font-bold text-center text-blue-700 mb-8">Timesheet Management</h1>
 
-        <div class="mb-12 p-6 bg-blue-50 rounded-lg shadow-md">
-            <h2 class="text-2xl font-semibold text-blue-600 mb-6">1. Timesheet Data Entry</h2>
+        <div class="mb-12 p-6 bg-green-50 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold text-green-600 mb-6">1. Project Dashboard</h2>
+            <div class="overflow-x-auto rounded-lg shadow-md">
+                <table id="dashboardTable" class="min-w-full bg-white rounded-lg">
+                    <thead>
+                        <tr>
+                            <th>Project Name</th>
+                            <th>Total Calculated Hours</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="p-6 bg-blue-50 rounded-lg shadow-md"> <h2 class="text-2xl font-semibold text-blue-600 mb-6">2. Timesheet Data Entry</h2>
             <form id="timesheetForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                 <div>
                     <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
@@ -132,6 +151,8 @@
                     <label for="projectName" class="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
                     <select id="projectName" required class="w-full rounded-md shadow-sm border-gray-300 focus:ring-blue-500 focus:border-blue-500">
                         <option value="Internship">Internship</option>
+                        <option value="Project Alpha">Project Alpha</option>
+                        <option value="Project Beta">Project Beta</option>
                     </select>
                 </div>
                 <div>
@@ -170,21 +191,6 @@
             </div>
         </div>
 
-        <div class="p-6 bg-green-50 rounded-lg shadow-md">
-            <h2 class="text-2xl font-semibold text-green-600 mb-6">2. Project Dashboard</h2>
-            <div class="overflow-x-auto rounded-lg shadow-md">
-                <table id="dashboardTable" class="min-w-full bg-white rounded-lg">
-                    <thead>
-                        <tr>
-                            <th>Project Name</th>
-                            <th>Total Calculated Hours</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        </tbody>
-                </table>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -204,7 +210,6 @@
                 localStorage.setItem('timesheetEntries', JSON.stringify(timesheetEntries));
             } catch (error) {
                 console.error("Error saving to localStorage:", error);
-                // Optionally, display a user-friendly message about storage issues
             }
         }
 
@@ -219,7 +224,6 @@
                 }
             } catch (error) {
                 console.error("Error loading from localStorage:", error);
-                // Clear corrupted data if parsing fails
                 localStorage.removeItem('timesheetEntries');
                 timesheetEntries = [];
             }
@@ -229,24 +233,18 @@
          * Calculates the total hours worked for a single entry.
          * @param {string} startTime - The start time in HH:MM format.
          * @param {string} endTime - The end time in HH:MM format.
-         * @returns {number} The total calculated hours (break hours are no longer deducted).
+         * @returns {number} The total calculated hours.
          */
         function calculateTotalHours(startTime, endTime) {
-            // Parse time strings into Date objects (using a dummy date for calculation)
             const start = new Date(`2000-01-01T${startTime}:00`);
             const end = new Date(`2000-01-01T${endTime}:00`);
 
-            // Handle overnight shifts (if end time is earlier than start time, add a day to end time)
             if (end < start) {
                 end.setDate(end.getDate() + 1);
             }
 
-            // Calculate difference in milliseconds
             const diffMs = end - start;
-            // Convert milliseconds to hours
-            const totalHours = (diffMs / (1000 * 60 * 60)); // No longer subtracting break hours
-
-            // Return hours rounded to two decimal places
+            const totalHours = (diffMs / (1000 * 60 * 60));
             return Math.round(totalHours * 100) / 100;
         }
 
@@ -254,18 +252,16 @@
          * Renders the timesheet entries into the timesheet data table.
          */
         function renderTimesheetTable() {
-            timesheetTableBody.innerHTML = ''; // Clear existing rows
+            timesheetTableBody.innerHTML = '';
             timesheetEntries.forEach(entry => {
                 const row = timesheetTableBody.insertRow();
-                row.className = 'bg-white hover:bg-gray-50 transition-colors duration-150'; // Tailwind classes for row styling
+                row.className = 'bg-white hover:bg-gray-50 transition-colors duration-150';
                 row.insertCell().textContent = entry.date;
-                // Employee Name column removed
                 row.insertCell().textContent = entry.projectName;
                 row.insertCell().textContent = entry.taskDescription;
                 row.insertCell().textContent = entry.startTime;
                 row.insertCell().textContent = entry.endTime;
-                // Break Hours column removed
-                row.insertCell().textContent = entry.totalHours.toFixed(2); // Display total hours with 2 decimal places
+                row.insertCell().textContent = entry.totalHours.toFixed(2);
             });
         }
 
@@ -273,9 +269,8 @@
          * Calculates and renders the project summary data into the dashboard table.
          */
         function calculateDashboard() {
-            const projectHours = {}; // Object to store total hours per project
+            const projectHours = {};
 
-            // Aggregate hours for each project
             timesheetEntries.forEach(entry => {
                 if (projectHours[entry.projectName]) {
                     projectHours[entry.projectName] += entry.totalHours;
@@ -284,14 +279,13 @@
                 }
             });
 
-            dashboardTableBody.innerHTML = ''; // Clear existing rows
+            dashboardTableBody.innerHTML = '';
 
-            // Render aggregated project hours
             for (const projectName in projectHours) {
                 const row = dashboardTableBody.insertRow();
-                row.className = 'bg-white hover:bg-gray-50 transition-colors duration-150'; // Tailwind classes for row styling
+                row.className = 'bg-white hover:bg-gray-50 transition-colors duration-150';
                 row.insertCell().textContent = projectName;
-                row.insertCell().textContent = projectHours[projectName].toFixed(2); // Display total hours with 2 decimal places
+                row.insertCell().textContent = projectHours[projectName].toFixed(2);
             }
         }
 
@@ -300,19 +294,15 @@
          * @param {Event} event - The form submission event.
          */
         function addTimesheetEntry(event) {
-            event.preventDefault(); // Prevent default form submission behavior
+            event.preventDefault();
 
-            // Get values from form inputs
             const date = document.getElementById('date').value;
             const projectName = document.getElementById('projectName').value.trim();
             const taskDescription = document.getElementById('taskDescription').value.trim();
             const startTime = document.getElementById('startTime').value;
             const endTime = document.getElementById('endTime').value;
-            // breakHours removed
 
-            // Basic validation - adjusted for removed fields
             if (!date || !projectName || !startTime || !endTime) {
-                // Using a custom message box instead of alert()
                 const messageBox = document.createElement('div');
                 messageBox.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50';
                 messageBox.innerHTML = `
@@ -325,10 +315,8 @@
                 return;
             }
 
-            // Calculate total hours for the new entry - no breakHours parameter
             const totalHours = calculateTotalHours(startTime, endTime);
 
-            // Create a new entry object - employeeName and breakHours removed
             const newEntry = {
                 date,
                 projectName,
@@ -338,31 +326,20 @@
                 totalHours
             };
 
-            // Add the new entry to the array
             timesheetEntries.push(newEntry);
-
-            // Save entries to localStorage
             saveEntries();
-
-            // Re-render both tables to reflect the changes
             renderTimesheetTable();
             calculateDashboard();
-
-            // Clear the form for the next entry
             timesheetForm.reset();
-            // Set default date to today for convenience
             document.getElementById('date').value = new Date().toISOString().split('T')[0];
         }
 
-        // Event listener for form submission
         timesheetForm.addEventListener('submit', addTimesheetEntry);
 
-        // Initial load and render when the DOM is fully loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            loadEntries(); // Load any previously saved entries
-            renderTimesheetTable(); // Render the timesheet table
-            calculateDashboard(); // Calculate and render the dashboard
-            // Set default date to today for convenience
+        document.addEventListener('DOMContentLoaded', ()_ => {
+            loadEntries();
+            renderTimesheetTable();
+            calculateDashboard();
             document.getElementById('date').value = new Date().toISOString().split('T')[0];
         });
     </script>
